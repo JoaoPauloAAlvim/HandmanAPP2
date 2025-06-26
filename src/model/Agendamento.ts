@@ -66,6 +66,7 @@ export interface Solicitacao {
         email: string;
         telefone: string;
         picture: string;
+        media_avaliacoes?: number;
     } | null;
 }
 

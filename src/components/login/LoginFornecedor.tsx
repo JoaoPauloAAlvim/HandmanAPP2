@@ -15,6 +15,7 @@ import { useBiometric } from '../../hooks/useBiometric';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_URL } from '../../constants/ApiUrl';
 
 interface InputWithLabelProps {
     label: string;
@@ -155,11 +156,47 @@ const LoginFornecedor: React.FC<LoginScreenProps> = ({ onBack, onNavigate, curre
             const result = await loginFornecedor(email, senha);
 
             if (result.success) {
+                // Obtenha o ID do fornecedor do token JWT
+                const token = result.data?.token;
+                let fornecedorId = null;
+                if (token) {
+                    try {
+                        const base64Url = token.split('.')[1];
+                        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                        const jsonPayload = decodeURIComponent(
+                            atob(base64)
+                                .split('')
+                                .map(function (c) {
+                                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                                })
+                                .join('')
+                        );
+                        const decoded = JSON.parse(jsonPayload);
+                        fornecedorId = decoded.id;
+                    } catch (e) {
+                        console.error('Erro ao decodificar token:', e);
+                    }
+                }
+                if (!fornecedorId) {
+                    Alert.alert('Erro', 'Não foi possível identificar o fornecedor.');
+                    setLoading(false);
+                    return;
+                }
+                // Busca o fornecedor pelo ID para pegar a média de avaliações
+                const fornecedorResp = await fetch(`${API_URL}/fornecedor/${fornecedorId}`);
+                const fornecedorData = await fornecedorResp.json();
+                console.log('fornecedorData:', fornecedorData);
+                const media = fornecedorData.media_avaliacoes;
+                const totalAvaliacoes = fornecedorData.totalAvaliacoes || 0;
+                if (typeof media === 'number' && media <= 2 && totalAvaliacoes > 2) {
+                    Alert.alert('Conta bloqueada', 'Sua conta foi bloqueada devido à baixa avaliação. Entre em contato com o suporte.');
+                    setLoading(false);
+                    return;
+                }
                 console.log('Login manual bem-sucedido, salvando credenciais');
                 await AsyncStorage.setItem('lastLoginEmail', email);
                 await AsyncStorage.setItem('lastLoginPassword', senha);
                 setHasStoredCredentials(true);
-                
                 Alert.alert('Login realizado com sucesso!');
                 onNavigate('MainApp');
             } else {

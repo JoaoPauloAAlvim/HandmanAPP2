@@ -14,6 +14,7 @@ import { useBiometric } from '../../hooks/useBiometric';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_URL } from '../../constants/ApiUrl';
 
 
 
@@ -123,6 +124,43 @@ const Login: React.FC<LoginScreenProps> = ({ onBack, onNavigate, currentScreen, 
                     const result = await login(savedEmail, savedPassword);
                     
                     if (result.success) {
+                        // Obtenha o ID do usuário do token JWT
+                        const token = result.data?.token;
+                        let userId = null;
+                        if (token) {
+                            try {
+                                const base64Url = token.split('.')[1];
+                                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                                const jsonPayload = decodeURIComponent(
+                                    atob(base64)
+                                        .split('')
+                                        .map(function (c) {
+                                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                                        })
+                                        .join('')
+                                );
+                                const decoded = JSON.parse(jsonPayload);
+                                userId = decoded.id;
+                            } catch (e) {
+                                console.error('Erro ao decodificar token:', e);
+                            }
+                        }
+                        if (!userId) {
+                            Alert.alert('Erro', 'Não foi possível identificar o usuário.');
+                            setLoading(false);
+                            return;
+                        }
+                        // Busca o usuário pelo ID para pegar a média de avaliações
+                        const userResp = await fetch(`${API_URL}/usuarios/buscar-id/${userId}`);
+                        const userData = await userResp.json();
+                        console.log('userData:', userData);
+                        const media = userData.media_avaliacoes;
+                        const totalAvaliacoes = userData.totalAvaliacoes || 0;
+                        if (typeof media === 'number' && media <= 2 && totalAvaliacoes > 2) {
+                            Alert.alert('Conta bloqueada', 'Sua conta foi bloqueada devido à baixa avaliação. Entre em contato com o suporte.');
+                            setLoading(false);
+                            return;
+                        }
                         console.log('Login biométrico bem-sucedido!');
                         onNavigate('MainApp');
                     } else {
@@ -157,11 +195,47 @@ const Login: React.FC<LoginScreenProps> = ({ onBack, onNavigate, currentScreen, 
             const result = await login(email, senha);
 
             if (result.success) {
+                // Obtenha o ID do usuário do token JWT
+                const token = result.data?.token;
+                let userId = null;
+                if (token) {
+                    try {
+                        const base64Url = token.split('.')[1];
+                        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                        const jsonPayload = decodeURIComponent(
+                            atob(base64)
+                                .split('')
+                                .map(function (c) {
+                                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                                })
+                                .join('')
+                        );
+                        const decoded = JSON.parse(jsonPayload);
+                        userId = decoded.id;
+                    } catch (e) {
+                        console.error('Erro ao decodificar token:', e);
+                    }
+                }
+                if (!userId) {
+                    Alert.alert('Erro', 'Não foi possível identificar o usuário.');
+                    setLoading(false);
+                    return;
+                }
+                // Busca o usuário pelo ID para pegar a média de avaliações
+                const userResp = await fetch(`${API_URL}/usuarios/buscar-id/${userId}`);
+                const userData = await userResp.json();
+                console.log('userData:', userData);
+                const media = userData.media_avaliacoes;
+                const totalAvaliacoes = userData.totalAvaliacoes || 0;
+                if (typeof media === 'number' && media <= 2 && totalAvaliacoes > 2) {
+                    Alert.alert('Conta bloqueada', 'Sua conta foi bloqueada devido à baixa avaliação. Entre em contato com o suporte.');
+                    setLoading(false);
+                    return;
+                }
                 console.log('Login manual bem-sucedido, salvando credenciais');
                 await AsyncStorage.setItem('lastLoginEmail', email);
                 await AsyncStorage.setItem('lastLoginPassword', senha);
                 setHasStoredCredentials(true);
-                
                 Alert.alert('Login realizado com sucesso!');
                 onNavigate('MainApp');
             } else {

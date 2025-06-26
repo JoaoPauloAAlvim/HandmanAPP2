@@ -76,6 +76,21 @@ export const CardAgendamentoFornecedor: React.FC<CardAgendamentoFornecedorProps>
                 />
                 <View style={styles.userInfo}>
                     <Text style={styles.userName}>{solicitacao.usuario?.nome || 'Cliente'}</Text>
+                    {solicitacao.usuario?.media_avaliacoes !== undefined && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                            {[1,2,3,4,5].map((star) => (
+                                <MaterialCommunityIcons
+                                    key={star}
+                                    name={star <= Math.round(solicitacao.usuario?.media_avaliacoes || 0) ? 'star' : 'star-outline'}
+                                    size={16}
+                                    color={star <= Math.round(solicitacao.usuario?.media_avaliacoes || 0) ? '#FFD700' : '#CCC'}
+                                />
+                            ))}
+                            <Text style={{ marginLeft: 4, fontSize: 12, color: '#666' }}>
+                                {Number(solicitacao.usuario?.media_avaliacoes || 0).toFixed(1)}
+                            </Text>
+                        </View>
+                    )}
                     <Text style={styles.serviceCategory}>{solicitacao.servico.categoria}</Text>
                 </View>
             </View>
