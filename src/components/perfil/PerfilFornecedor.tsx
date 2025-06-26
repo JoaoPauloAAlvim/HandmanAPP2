@@ -55,6 +55,10 @@ export const PerfilFornecedor: React.FC = () => {
         return unsubscribe;
     }, [navigation, userId]);
 
+    useEffect(() => {
+        carregarPerfil(); // Atualiza automaticamente ao abrir
+    }, []);
+
     const verificarPermissoes = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
@@ -233,14 +237,14 @@ export const PerfilFornecedor: React.FC = () => {
     const handleLogout = async () => {
         try {
             await logout();
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-            });
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                        });
         } catch (error) {
             console.error('Erro ao fazer logout:', error);
             Alert.alert('Erro', 'Não foi possível fazer logout.');
-        }
+                }
     };
 
     if (loading) {
@@ -288,7 +292,7 @@ export const PerfilFornecedor: React.FC = () => {
                         <View
                             style={[
                                 styles.progressBarFill,
-                                { width: `${Math.min(100, Math.round((perfil.servicosConcluidosSemana / perfil.metaSemana) * 100))}%` }
+                                { width: `${perfil.servicosConcluidosSemana >= perfil.metaSemana ? 100 : Math.min(100, Math.round((perfil.servicosConcluidosSemana / perfil.metaSemana) * 100))}%` }
                             ]}
                         />
                     </View>

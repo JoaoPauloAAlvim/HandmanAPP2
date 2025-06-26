@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FornecedorStackParamList } from '../navigation/FornecedorStackNavigation';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootTabParamList } from '../navigation/TabNavigation';
+import { FontAwesome } from '@expo/vector-icons';
 
 type FornecedorNavigationProp = CompositeNavigationProp<
     NativeStackNavigationProp<FornecedorStackParamList>,
@@ -47,7 +48,12 @@ export const CardFornecedor = ({fornecedor}:CardFornecedorProps) =>{
             </TouchableOpacity>
             <View style={styles.contentContainer}>
                 <View style={styles.infoContainer}>
-                    <Text style={styles.nome}>{fornecedor.nome}</Text>
+                    <Text style={styles.nome}>
+                        {fornecedor.nome}
+                        {fornecedor.destaqueSemana && (
+                            <FontAwesome name="trophy" size={18} color="#FFD700" style={{ marginLeft: 6 }} />
+                        )}
+                    </Text>
                     <Text style={styles.email}>{fornecedor.sub_descricao}</Text>
                     <View style={styles.ratingAndValueContainer}>
                         <View style={styles.ratingContainer}>
