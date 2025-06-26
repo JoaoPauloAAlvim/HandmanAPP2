@@ -29,4 +29,7 @@ export type typeFornecedor = {
     solicitacoes: string[];
     imagemServicos:string[];
     media_avaliacoes: number;
+    destaqueSemana?: boolean;
+    servicosConcluidosSemana?: number;
+    metaSemana?: number;
 } 

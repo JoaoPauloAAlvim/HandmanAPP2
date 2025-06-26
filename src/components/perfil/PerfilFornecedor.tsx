@@ -45,6 +45,16 @@ export const PerfilFornecedor: React.FC = () => {
         }
     }, [userId]);
 
+    // Forçar atualização ao focar na tela (React Navigation)
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            if(userId){
+                carregarPerfil();
+            }
+        });
+        return unsubscribe;
+    }, [navigation, userId]);
+
     const verificarPermissoes = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
@@ -66,6 +76,8 @@ export const PerfilFornecedor: React.FC = () => {
             const response = await axios.get(`${API_URL}/fornecedor/${userId}`);
             setPerfil(response.data);
             setError(null);
+            // Log para depuração
+            console.log('perfil recebido em PerfilFornecedor:', response.data);
         } catch (err) {
             setError('Erro ao carregar perfil. Tente novamente mais tarde.');
             console.error('Erro ao carregar perfil:', err);
@@ -218,30 +230,17 @@ export const PerfilFornecedor: React.FC = () => {
 
     
 
-    const handleLogout = () => {
-        Alert.alert(
-            "Sair",
-            "Tem certeza que deseja sair?",
-            [
-                {
-                    text: "Cancelar",
-                    style: "cancel"
-                },
-                {
-                    text: "Sair",
-                    onPress: () => {
-                        useAuth();
-
-                        // Aqui você pode adicionar a lógica de limpeza do token
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Login' }],
-                        });
-                    },
-                    style: "destructive"
-                }
-            ]
-        );
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
+        } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+            Alert.alert('Erro', 'Não foi possível fazer logout.');
+        }
     };
 
     if (loading) {
@@ -280,6 +279,27 @@ export const PerfilFornecedor: React.FC = () => {
                     <Ionicons name="log-out-outline" size={24} color="#fff" />
                 </TouchableOpacity>
             </View>
+
+            {/* Barra de Progresso de Destaque Semanal */}
+            {perfil && perfil.servicosConcluidosSemana != null && perfil.metaSemana != null && (
+                <View style={styles.progressContainer}>
+                    <Text style={styles.progressTitle}>Progresso para Destaque da Semana</Text>
+                    <View style={styles.progressBarBackground}>
+                        <View
+                            style={[
+                                styles.progressBarFill,
+                                { width: `${Math.min(100, Math.round((perfil.servicosConcluidosSemana / perfil.metaSemana) * 100))}%` }
+                            ]}
+                        />
+                    </View>
+                    <Text style={styles.progressText}>
+                        Você concluiu <Text style={styles.bold}>{perfil.servicosConcluidosSemana}</Text> de <Text style={styles.bold}>{perfil.metaSemana}</Text> serviços nesta semana.
+                        {perfil.servicosConcluidosSemana >= perfil.metaSemana && (
+                            <Text style={styles.congrats}>  Parabéns! Você ganhou o destaque da semana!</Text>
+                        )}
+                    </Text>
+                </View>
+            )}
 
             {/* Imagem de Perfil */}
             <View style={styles.section}>
@@ -561,6 +581,46 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 16,
+    },
+    progressContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 15,
+        margin: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    progressTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 10,
+    },
+    progressBarBackground: {
+        backgroundColor: '#eee',
+        borderRadius: 5,
+        height: 20,
+        marginBottom: 10,
+    },
+    progressBarFill: {
+        backgroundColor: '#d48a00',
+        borderRadius: 5,
+        height: '100%',
+    },
+    progressText: {
+        fontSize: 16,
+        color: '#333',
+        lineHeight: 22,
+    },
+    bold: {
+        fontWeight: 'bold',
+    },
+    congrats: {
+        fontWeight: 'bold',
+        color: 'green',
     },
 });
 
