@@ -7,6 +7,7 @@ import { User } from "../model/User";
 import { SearchBar } from "../components/SearchBar";
 import { CategoryButtons } from "../components/CategoryButtons";
 import React, { useState, useEffect } from "react";
+import { useDestaqueSocket } from "../hooks/useSocketConnection";
 
 interface FornecedorViewProps {
     usuario: User | undefined,
@@ -15,11 +16,28 @@ interface FornecedorViewProps {
     fornecedoresMelhoresAvaliados: typeFornecedor[] | undefined,
     setCategoria: React.Dispatch<React.SetStateAction<string>>
     loading:boolean
+    onDestaqueAtualizado?: () => void;
 }
 
-export const FornecedorView = ({usuario, fornecedoresPorCategoria, fornecedoresMelhoresPreco, fornecedoresMelhoresAvaliados, setCategoria,loading }: FornecedorViewProps) => {
+export const FornecedorView = ({
+    usuario, 
+    fornecedoresPorCategoria, 
+    fornecedoresMelhoresPreco, 
+    fornecedoresMelhoresAvaliados, 
+    setCategoria,
+    loading,
+    onDestaqueAtualizado
+}: FornecedorViewProps) => {
     const [searchText, setSearchText] = useState('');
     const [filteredFornecedores, setFilteredFornecedores] = useState<typeFornecedor[] | undefined>(fornecedoresPorCategoria);
+
+    // Hook para escutar eventos de destaque
+    useDestaqueSocket(() => {
+        console.log('Evento de destaque recebido em FornecedorView');
+        if (onDestaqueAtualizado) {
+            onDestaqueAtualizado();
+        }
+    });
 
     useEffect(() => {
         if (!searchText.trim()) {
@@ -51,6 +69,7 @@ export const FornecedorView = ({usuario, fornecedoresPorCategoria, fornecedoresM
         return (
             <CardFornecedor
                 fornecedor={item}
+                onDestaqueAtualizado={onDestaqueAtualizado}
             />
         )
     }

@@ -20,6 +20,7 @@ import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthContext, useAuth } from '../../context/AuthContext';
+import { useDestaqueSocket } from '../../hooks/useSocketConnection';
 
 type RootStackParamList = {
     Login: undefined;
@@ -35,8 +36,8 @@ export const PerfilFornecedor: React.FC = () => {
     const token = useGetToken();
     const userId = token?.id;
     const navigation = useNavigation<NavigationProp>();
-
     const {logout} = useAuth();
+    const [refresh, setRefresh] = useState(0);
 
     useEffect(() => {
         if(userId){
@@ -59,6 +60,12 @@ export const PerfilFornecedor: React.FC = () => {
         carregarPerfil(); // Atualiza automaticamente ao abrir
     }, []);
 
+    // Hook para escutar eventos de destaque/reset e recarregar perfil
+    useDestaqueSocket(() => {
+        console.log('Evento de destaque/reset recebido no PerfilFornecedor, recarregando perfil...');
+        carregarPerfil();
+    });
+
     const verificarPermissoes = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
@@ -80,6 +87,7 @@ export const PerfilFornecedor: React.FC = () => {
             const response = await axios.get(`${API_URL}/fornecedor/${userId}`);
             setPerfil(response.data);
             setError(null);
+            setRefresh(r => r + 1);
             // Log para depuração
             console.log('perfil recebido em PerfilFornecedor:', response.data);
         } catch (err) {
@@ -272,8 +280,15 @@ export const PerfilFornecedor: React.FC = () => {
         );
     }
 
+    // Cálculo seguro para barra e texto
+    const meta = perfil?.metaSemana ?? 10;
+    const concluidos = perfil?.servicosConcluidosSemana ?? 0;
+    const progresso = Math.min(concluidos, meta);
+    const progressoTexto = concluidos > meta ? `${meta}+` : concluidos;
+    const barraPercent = meta > 0 ? Math.min(100, Math.round((progresso / meta) * 100)) : 0;
+
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView key={refresh} style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.header}>Perfil</Text>
                 <TouchableOpacity 
@@ -285,20 +300,15 @@ export const PerfilFornecedor: React.FC = () => {
             </View>
 
             {/* Barra de Progresso de Destaque Semanal */}
-            {perfil && perfil.servicosConcluidosSemana != null && perfil.metaSemana != null && (
+            {perfil && (
                 <View style={styles.progressContainer}>
                     <Text style={styles.progressTitle}>Progresso para Destaque da Semana</Text>
                     <View style={styles.progressBarBackground}>
-                        <View
-                            style={[
-                                styles.progressBarFill,
-                                { width: `${perfil.servicosConcluidosSemana >= perfil.metaSemana ? 100 : Math.min(100, Math.round((perfil.servicosConcluidosSemana / perfil.metaSemana) * 100))}%` }
-                            ]}
-                        />
+                        <View style={[styles.progressBarFill, { width: `${barraPercent}%` }]} />
                     </View>
                     <Text style={styles.progressText}>
-                        Você concluiu <Text style={styles.bold}>{perfil.servicosConcluidosSemana}</Text> de <Text style={styles.bold}>{perfil.metaSemana}</Text> serviços nesta semana.
-                        {perfil.servicosConcluidosSemana >= perfil.metaSemana && (
+                        Você concluiu <Text style={{ fontWeight: 'bold' }}>{progressoTexto}</Text> de <Text style={{ fontWeight: 'bold' }}>{meta}</Text> serviços nesta semana.
+                        {concluidos >= meta && (
                             <Text style={styles.congrats}>  Parabéns! Você ganhou o destaque da semana!</Text>
                         )}
                     </Text>
@@ -618,9 +628,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
         lineHeight: 22,
-    },
-    bold: {
-        fontWeight: 'bold',
     },
     congrats: {
         fontWeight: 'bold',

@@ -8,6 +8,8 @@ import { FornecedorStackParamList } from '../navigation/FornecedorStackNavigatio
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootTabParamList } from '../navigation/TabNavigation';
 import { FontAwesome } from '@expo/vector-icons';
+import { useDestaqueSocket } from '../hooks/useSocketConnection';
+import { useState, useEffect } from 'react';
 
 type FornecedorNavigationProp = CompositeNavigationProp<
     NativeStackNavigationProp<FornecedorStackParamList>,
@@ -16,12 +18,26 @@ type FornecedorNavigationProp = CompositeNavigationProp<
 
 interface CardFornecedorProps{
     fornecedor:typeFornecedor,
+    onDestaqueAtualizado?: () => void;
 }
 
 const windowWidth = Dimensions.get('window').width;
 
-export const CardFornecedor = ({fornecedor}:CardFornecedorProps) =>{
+export const CardFornecedor = ({fornecedor, onDestaqueAtualizado}:CardFornecedorProps) =>{
     const navigation = useNavigation<FornecedorNavigationProp>();
+    const [destaqueSemana, setDestaqueSemana] = useState(fornecedor.destaqueSemana || false);
+
+    // Hook para escutar eventos de destaque
+    useDestaqueSocket(() => {
+        if (onDestaqueAtualizado) {
+            onDestaqueAtualizado();
+        }
+    });
+
+    // Atualiza o estado local quando o fornecedor muda
+    useEffect(() => {
+        setDestaqueSemana(fornecedor.destaqueSemana || false);
+    }, [fornecedor]);
 
     const formatarAvaliacao = (avaliacao: number) => {
         if (Number.isInteger(avaliacao)) {
@@ -50,7 +66,7 @@ export const CardFornecedor = ({fornecedor}:CardFornecedorProps) =>{
                 <View style={styles.infoContainer}>
                     <Text style={styles.nome}>
                         {fornecedor.nome}
-                        {fornecedor.destaqueSemana && (
+                        {destaqueSemana && (
                             <FontAwesome name="trophy" size={18} color="#FFD700" style={{ marginLeft: 6 }} />
                         )}
                     </Text>
@@ -109,9 +125,10 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     buttonContainer: {
-        marginTop: 15,
+        marginTop: 25,
         borderRadius: 25,
         overflow: 'hidden',
+        marginHorizontal: 10,
     },
     nome: {
         fontSize: 20,
@@ -131,5 +148,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#444',
-    }
+    },
 })

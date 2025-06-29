@@ -74,6 +74,7 @@ export const FornecedorController = () => {
                 fornecedoresMelhoresAvaliados={fornecedoresMelhoresAvaliados}
                 setCategoria={setCategoria}
                 loading={loading}
+                onDestaqueAtualizado={fetchFornecedores}
             />
         </>
     )

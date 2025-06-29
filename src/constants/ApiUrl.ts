@@ -1,5 +1,5 @@
 //local
-export const API_URL = 'http://192.168.0.105:3003';
+export const API_URL = 'http://localhost:3003';
 
 // https://handyman-back-production.up.railway.app
 
